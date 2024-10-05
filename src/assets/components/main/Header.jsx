@@ -1,4 +1,5 @@
-
+import { Link } from "react-router-dom"; // Importa Link
+ //
 
 const Header = () => {
 
@@ -12,10 +13,11 @@ const Header = () => {
                             <nav className="navctn">
                                 <h1 className="logo"><span>Agro</span> Space</h1>
                                 <ul className="ctnul">
-                                    <li><a href="#inicio" className="linkul">Home   </a></li>
-                                    <li><a href="#sobremi" className="linkul">How To Start</a></li>
+                                    <li><Link to='/' className="linkul">Home   </Link></li>
+                                    <li><Link to='/tools' className="linkul">Tools</Link></li>
+                                    {/* <li><a href="#sobremi" className="linkul">How To Start</a></li>
                                     <li><a href="#sobremi" className="linkul">Tools</a></li>
-                                    <li><a href="#sobremi" className="linkul">About Us</a></li>
+                                    <li><a href="#sobremi" className="linkul">About Us</a></li> */}
                                 </ul>
                             </nav>
                         </div>

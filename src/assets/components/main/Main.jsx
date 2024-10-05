@@ -15,7 +15,7 @@ const Main = () => {
                 </div>
                 <div className="main-ctn-card">
                     <div className="main-ctn-card-img">
-                        <img src="" alt="img"/>
+                        <img src="../src/assets/components/main/img/whoweare.jpg" alt="img"/>
                     </div>
                 </div>
             </div>
