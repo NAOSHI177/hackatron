@@ -5,11 +5,11 @@ const Header = () => {
 
     return(
         <>
-            <header>
-                <h1>Header</h1>
+            <header className="flex">
+                
             </header>
         </>
     )
 }
-export default Header;
+export default Header
   
