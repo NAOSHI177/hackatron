@@ -1,66 +1,83 @@
 import express from 'express';
-import cors from 'cors'; 
+import cors from 'cors';
 import { VertexAI } from '@google-cloud/vertexai';
 
 const app = express();
 const port = 3001;
-
-app.use(cors()); 
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cors());
 app.use(express.json());
 
 app.post('/api/recommendations', async (req, res) => {
-  console.log("Request received at /api/recommendations"); 
+  console.log("Request received at /api/recommendations");
   try {
-    const { tipoDeCultivo, nombreDelCultivo, data } = req.body;
+    const { tipoDeCultivo, nombreDelCultivo, data, latitud, longitud } = req.body;
 
-    const vertexAI = new VertexAI({ project: 'alpha-agro-space', location: 'us-central1' }); 
+    // console.log("Datos climáticos recibidos:");
+    // console.log("Temperatura:", JSON.stringify(data.T2M, null, 2));
+    // console.log("Punto de rocío:", JSON.stringify(data.T2MDEW, null, 2));
+    // console.log("Temperatura del bulbo húmedo:", JSON.stringify(data.T2MWET, null, 2));
+    // console.log("Temperatura de la superficie:", JSON.stringify(data.TS, null, 2));
+    // console.log("Precipitación:", JSON.stringify(data.PRECTOTCORR, null, 2));
+    // console.log("Humedad relativa:", JSON.stringify(data.RH2M, null, 2));
+    // console.log("Velocidad del viento:", JSON.stringify(data.WS10M, null, 2));
+    // console.log("Dirección del viento:", JSON.stringify(data.WD10M, null, 2));
+    // console.log("Radiación solar (cielo despejado):", JSON.stringify(data.CLRSKY_SFC_SW_DWN, null, 2));
+    // console.log("Radiación solar (cielo cubierto):", JSON.stringify(data.ALLSKY_SFC_SW_DWN, null, 2));
+    // console.log("Humedad específica:", JSON.stringify(data.QV2M, null, 2));
+    
+    const vertexAI = new VertexAI({ project: 'alpha-agro-space', location: 'us-central1' });
     const generativeModel = vertexAI.getGenerativeModel({
       model: 'gemini-1.5-flash-001',
     });
 
-    let prompt = `Dado el tipo de plantación ${tipoDeCultivo}, calcula el promedio de las variables relevantes y realiza una predicción basada en las tendencias observadas. Proporciona recomendaciones específicas para optimizar el rendimiento de la plantación, en este caso ${nombreDelCultivo}.`;
+    // Crear un prompt más detallado con todos los datos disponibles
+    let prompt = `Estamos analizando una plantación de ${tipoDeCultivo} en ${nombreDelCultivo}, ubicada en la latitud ${latitud} y longitud ${longitud}. 
+    Aquí están los datos climáticos recientes para el análisis y la predicción del rendimiento:
 
-    // Filtrar los datos para reducir el tamaño de la solicitud
-    if (data && data.properties && data.properties.parameter) {
-      const { properties } = data;
-      const { parameter } = properties;
-      const temperatureData = parameter.T2M;
-      const dewPointData = parameter.T2MDEW;
-      const wetBulbData = parameter.T2MWET;
-      const surfaceTempData = parameter.TS;
-      const precipitationData = parameter.PRECTOTCORR;
-      const relativeHumidityData = parameter.RH2M;
-      const windSpeedData = parameter.WS10M;
-      const windDirectionData = parameter.WD10M;
-      const solarRadiationAllSkyData = parameter.ALLSKY_SFC_SW_DWN;
-      const solarRadiationClearSkyData = parameter.CLRSKY_SFC_SW_DWN;
-      const specificHumidityData = parameter.QV2M;
-
-      prompt += `
-  
-        Datos climáticos:
-        Temperatura: ${JSON.stringify(temperatureData)}
-        Dew Point: ${JSON.stringify(dewPointData)}
-        Wet Bulb Temperature: ${JSON.stringify(wetBulbData)}
-        Surface Temperature: ${JSON.stringify(surfaceTempData)}
-        Precipitation: ${JSON.stringify(precipitationData)}
-        Relative Humidity: ${JSON.stringify(relativeHumidityData)}
-        Wind Speed: ${JSON.stringify(windSpeedData)}
-        Wind Direction: ${JSON.stringify(windDirectionData)}
-        Solar Radiation (All Sky): ${JSON.stringify(solarRadiationAllSkyData)}
-        Solar Radiation (Clear Sky): ${JSON.stringify(solarRadiationClearSkyData)}
-        Specific Humidity: ${JSON.stringify(specificHumidityData)}
-      `;
-    }
+    - **Temperatura**: ${JSON.stringify(data.T2M)}
+    - **Punto de rocío**: ${JSON.stringify(data.T2MDEW)}
+    - **Temperatura del bulbo húmedo**: ${JSON.stringify(data.T2MWET)}
+    - **Temperatura de la superficie**: ${JSON.stringify(data.TS)}
+    - **Precipitación**: ${JSON.stringify(data.PRECTOTCORR)}
+    - **Humedad relativa**: ${JSON.stringify(data.RH2M)}
+    - **Velocidad del viento**: ${JSON.stringify(data.WS10M)}
+    - **Dirección del viento**: ${JSON.stringify(data.WD10M)}
+    - **Radiación solar (cielo despejado)**: ${JSON.stringify(data.CLRSKY_SFC_SW_DWN)}
+    - **Radiación solar (cielo cubierto)**: ${JSON.stringify(data.ALLSKY_SFC_SW_DWN)}
+    - **Humedad específica**: ${JSON.stringify(data.QV2M)}
     
+    Con base en estos datos climáticos y la ubicación de la plantación, por favor calcula las siguientes métricas:
+    
+    1. **Promedio de las variables climáticas relevantes** (como temperatura, humedad, precipitación, etc.).
+    2. **Predicciones para la próxima temporada**: Haz predicciones para el rendimiento del cultivo, considerando las condiciones climáticas actuales.
+    3. **Recomendaciones específicas**: Proporciona recomendaciones para optimizar el rendimiento de la plantación de ${nombreDelCultivo}, como ajustes en el uso de fertilizantes, riego, o cambios en la fecha de siembra, con base en las predicciones climáticas.
+    `;
 
+    // Enviar el prompt al modelo
     const resp = await generativeModel.generateContent(prompt);
-    const contentResponse = await resp.response;
-    console.log("Recomendaciones generadas:", contentResponse.text);
 
-    res.json({ recommendations: contentResponse.text });
+    // Verificar y procesar la respuesta del modelo
+    console.log("Full response object:", JSON.stringify(resp, null, 2));
+
+    if (resp.response && resp.response.candidates && resp.response.candidates.length > 0) {
+      const candidate = resp.response.candidates[0];
+      console.log("Candidate object:", JSON.stringify(candidate, null, 2));
+
+      if (candidate.content) {
+        const recommendationText = candidate.content.parts[0].text || "No se generaron recomendaciones.";
+        res.json({ recommendations: recommendationText });
+      } else {
+        console.error("Content field is missing in the candidate");
+        res.status(500).json({ error: "Content field is missing in the response" });
+      }
+    } else {
+      console.error("No candidates found in response");
+      res.status(500).json({ error: "No candidates found in response" });
+    }
   } catch (error) {
-    console.error("Error al generar recomendaciones:", error);
+    console.error("Error al generar recomendaciones:", error.message || error);
     res.status(500).json({ error: "Error al generar recomendaciones" });
   }
 });

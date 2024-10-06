@@ -1,6 +1,6 @@
 .chat {
     @include center;
-    width: 300px;
+    width: 600px;
     height: 80vh;
     max-height: 500px;
     z-index: 2;
@@ -64,12 +64,18 @@
   /*--------------------
   Messages
   --------------------*/
+
+  .messages::-webkit-scrollbar {
+    display: none; /* Oculta la barra de desplazamiento en Chrome, Safari y Opera */
+  }
+
   .messages {
     flex: 1 1 auto;
     color: rgba(255, 255, 255, .5);
-    overflow: hidden;
+    overflow-y: auto;
     position: relative;
     width: 100%;
+    margin: 15px;
     
     & .messages-content {
       position: absolute;
@@ -414,4 +420,8 @@
     display: flex;
     margin: 0 auto;
     width: 100%;
+  }
+
+  .div-respuesta{
+    margin-right: 20px;
   }

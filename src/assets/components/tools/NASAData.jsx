@@ -1,6 +1,5 @@
-import React , { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-
 
 function NASAData() {
 
@@ -13,6 +12,7 @@ function NASAData() {
   const [markerPosition, setMarkerPosition] = useState({ lat: -25.5087, lng: -54.6483 });
   const center = useRef({ lat: -25.5087, lng: -54.6483 }); 
   const inputRef = useRef(null);
+  const [selectedPosition, setSelectedPosition] = useState({ lat: null, lng: null }); // Estado para posición seleccionada
 
   const onLoad = React.useCallback(function callback(map) {
     setMap(map); 
@@ -21,27 +21,17 @@ function NASAData() {
   const onUnmount = React.useCallback(function callback() {
     setMap(null);
   }, []);
- 
-  const [selectedPosition, setSelectedPosition] = useState(null); // Nuevo estado para la posición seleccionada
 
   const handleMapClick = (event) => {
-    setSelectedPosition(event.latLng); 
+    setSelectedPosition({ lat: event.latLng.lat(), lng: event.latLng.lng() }); // Captura la geolocalización
   };
 
   useEffect(() => {
     if (map) {
-      const handleMarkerClick = () => {
-        const location = markerPosition;
-        if (inputRef.current) {
-            inputRef.current.value = location.toString();
-        }
-      };
       const newMarker = new window.google.maps.Marker({
         position: markerPosition,
         map: map,
       });
-      
-      newMarker.addListener('click', handleMarkerClick);
 
       map.addListener('click', handleMapClick); // Evento click en el mapa
 
@@ -58,9 +48,9 @@ function NASAData() {
   const [tipoDeCultivo, setTipoDeCultivo] = useState('');
   const [nombreDelCultivo, setNombreDelCultivo] = useState('');
 
-  const url = "https://power.larc.nasa.gov/api/temporal/hourly/point";
+  const url = "https://power.larc.nasa.gov/api/temporal/daily/point";
   const params = {
-    start: "20240912",
+    start: "20150912",
     parameters: "T2M,T2MDEW,T2MWET,TS,PS,RH2M,PRECTOTCORR,WS10M,WD10M,ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,QV2M",
     community: "AG",
     latitude: "-25.5097",
@@ -97,8 +87,8 @@ function NASAData() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!data) {
-      setError(new Error("Los datos de la NASA aún no están disponibles. Por favor, espere."));
+    if (!data || !selectedPosition.lat || !selectedPosition.lng) {
+      setError(new Error("Los datos de la NASA o la geolocalización aún no están disponibles. Por favor, espere."));
       return;
     }
 
@@ -125,7 +115,9 @@ function NASAData() {
         body: JSON.stringify({
           tipoDeCultivo: tipoDeCultivo,
           nombreDelCultivo: nombreDelCultivo,
-          data: filteredData
+          data: filteredData,
+          latitud: selectedPosition.lat,   // Enviamos la latitud seleccionada
+          longitud: selectedPosition.lng   // Enviamos la longitud seleccionada
         })
       });
 
@@ -142,91 +134,82 @@ function NASAData() {
       setError(error);
     }
   };
-  
- 
 
   return isLoaded ? (
     <>
       <div className="ctn-tool-main">
         <div className="login-box">
-            <h2>Login</h2>
-            {data ? (
-              <form onSubmit={handleSubmit}>
-                <div className="user-box">
-                  <input
-                    type="text"
-                    id="tipoDeCultivo"
-                    value={tipoDeCultivo}
-                    onChange={(e) => setTipoDeCultivo(e.target.value)}
-                  />
-                  <label htmlFor="tipoDeCultivo">Tipo de Cultivo: </label>
-                </div>
-                <div className="user-box">
-                  <input
-                    type="text"
-                    id="nombreDelCultivo"
-                    value={nombreDelCultivo}
-                    onChange={(e) => setNombreDelCultivo(e.target.value)}
-                  />
-                  <label htmlFor="nombreDelCultivo">Nombre del Cultivo:</label>
-                </div>
-                <div className="user-box">
-                  <button type="submit" className="button-29">Send</button> 
-                <div>
-      <GoogleMap
-        mapContainerStyle={{ height: '200px', width: '100%', borderRadius: '10px' }}
-        center={center.current}
-        zoom={12}
-        onLoad={onLoad}
-        onUnmount={onUnmount}
-        onClick={handleMapClick} 
-      >
-        <Marker position={markerPosition} />
-        <Marker position={selectedPosition} />
-
-      </GoogleMap>
-      <input type="text" id="location-input" ref={inputRef} />
-      {selectedPosition && ( // Mostrar las coordenadas
-        <div>
-          Latitud: {selectedPosition.lat()}
-          <br />
-          Longitud: {selectedPosition.lng()}
-        </div>
-      )}
-    </div>
-  
-                </div>
-              </form>
-                    ) : (
-                      <div>Cargando datos de la NASA...</div>
-                    )}
+          <h2>Login</h2>
+          {data ? (
+            <form onSubmit={handleSubmit}>
+              <div className="user-box">
+                <input
+                  type="text"
+                  id="tipoDeCultivo"
+                  value={tipoDeCultivo}
+                  onChange={(e) => setTipoDeCultivo(e.target.value)}
+                />
+                <label htmlFor="tipoDeCultivo">Tipo de Cultivo: </label>
               </div>
-        
-    <div>
-      {error && <div>Error: {error.message}</div>}
-      {plantingRecommendations && (
-        <div>
-          <h1>Respuesta de Geminis:</h1>
-          <h2>Recomendaciones para la plantación de {nombreDelCultivo}:</h2>
-          <p>{plantingRecommendations}</p>
+              <div className="user-box">
+                <input
+                  type="text"
+                  id="nombreDelCultivo"
+                  value={nombreDelCultivo}
+                  onChange={(e) => setNombreDelCultivo(e.target.value)}
+                />
+                <label htmlFor="nombreDelCultivo">Nombre del Cultivo:</label>
+              </div>
+              <div className="user-box">
+                <button type="submit" className="button-29">Send</button> 
+                <div>
+                  <GoogleMap
+                    mapContainerStyle={{ height: '200px', width: '100%', borderRadius: '10px' }}
+                    center={center.current}
+                    zoom={12}
+                    onLoad={onLoad}
+                    onUnmount={onUnmount}
+                    onClick={handleMapClick} 
+                  >
+                    <Marker position={markerPosition} />
+                    {selectedPosition && (
+                      <Marker position={selectedPosition} />
+                    )}
+                  </GoogleMap>
+                  {selectedPosition && (
+                    <div>
+                      Latitud: {selectedPosition.lat}
+                      <br />
+                      Longitud: {selectedPosition.lng}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </form>
+          ) : (
+            <div>Cargando datos de la NASA...</div>
+          )}
         </div>
-      )}
-    </div>
-          <div className="chat">
+        <div className="chat">
             <div className="chat-title">
-              <h1>Geminis 1.5 pro</h1>
-              <h2>@geminis</h2>
+              <h1>Gemini 1.5 pro</h1>
+              <h2>@gemini</h2>
                 <figure className="avatar">
                   <img src="https://play-lh.googleusercontent.com/Pkwn0AbykyjSuCdSYCbq0dvOqHP-YXcbBLTZ8AOUZhvnRuhUnZ2aJrw_YCf6kVMcZ4PM=w240-h480-rw" /></figure>
             </div>
             <div className="messages">
-              <div className="messages-content"></div>
+              <div className="messages-content"><div>
+          {error && <div>Error: {error.message}</div>}
+          {plantingRecommendations && (
+            <div className="div-respuesta">
+              <h2>Recomendaciones para la plantación de {nombreDelCultivo}:</h2>
+              <p>{plantingRecommendations}</p>
+            </div>
+          )}
+        </div></div>
             </div>
           </div>
-          <div>
-    </div>
-      </div>
-
+        </div>
     </>
   ) : <></>;
 }
