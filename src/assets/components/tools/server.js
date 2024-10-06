@@ -1,24 +1,23 @@
-const express = require('express');
-const { VertexAI } = require('@google-cloud/vertexai');
+import express from 'express';
+import { VertexAI } from '@google-cloud/vertexai';
 
 const app = express();
-const port = 3001; // Puedes cambiar el puerto
+const port = 3001;
 
-app.use(express.json()); // Para procesar el cuerpo de la solicitud como JSON
+app.use(express.json());
 
-app.get('/api/recommendations', async (req, res) => {
+app.post('/api/recommendations', async (req, res) => {
   try {
-    const { tipoDeCultivo, nombreDelCultivo } = req.query;
-    const data = JSON.parse(req.query.data); // Convertir la cadena JSON a un objeto
+    const { tipoDeCultivo, nombreDelCultivo, data } = req.body;
 
-    const vertexAI = new VertexAI({ project: 'YOUR_PROJECT_ID', location: 'us-central1' }); // Reemplaza YOUR_PROJECT_ID
+    const vertexAI = new VertexAI({ project: 'alpha-agro-space', location: 'us-central1' }); 
     const generativeModel = vertexAI.getGenerativeModel({
       model: 'gemini-1.5-flash-001',
     });
 
-    // Construir el prompt (incluyendo los datos meteorológicos)
     let prompt = `Dado el tipo de plantación ${tipoDeCultivo}, calcula el promedio de las variables relevantes y realiza una predicción basada en las tendencias observadas. Proporciona recomendaciones específicas para optimizar el rendimiento de la plantación, en este caso ${nombreDelCultivo}.`;
 
+    // Filtrar los datos para reducir el tamaño de la solicitud
     if (data && data.properties && data.properties.parameter) {
       const { properties } = data;
       const { parameter } = properties;
@@ -37,7 +36,7 @@ app.get('/api/recommendations', async (req, res) => {
       const snowAccumulationData = parameter.ASNOW;
 
       prompt += `
-
+  
         Datos climáticos:
         Temperatura: ${JSON.stringify(temperatureData)}
         Dew Point: ${JSON.stringify(dewPointData)}

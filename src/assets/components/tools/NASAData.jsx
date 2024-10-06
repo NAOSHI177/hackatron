@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react";
-import { VertexAI } from '@google-cloud/vertexai';
 
 function NASAData() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [plantingRecommendations, setPlantingRecommendations] = useState(null);
-
-  // Define el tipo de cultivo y el nombre del cultivo
-  const tipoDeCultivo = "soja"; // Reemplaza con el tipo de cultivo real
-  const nombreDelCultivo = "soja transgénica"; // Reemplaza con el nombre del cultivo real
+  const [tipoDeCultivo, setTipoDeCultivo] = useState('');
+  const [nombreDelCultivo, setNombreDelCultivo] = useState('');
 
   const url = "https://power.larc.nasa.gov/api/temporal/hourly/point";
   const params = {
     start: "20230912",
-    parameters: "T2M,T2MDEW,T2MWET,TS,PRECTOTCORR,RH2M,WS10M,WD10M,ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,QV2M,CLOUDTOT,ASNOW",
+    parameters: "T2M,T2MDEW,T2MWET,TS,PS,RH2M,PRECTOTCORR,WS10M,WD10M,ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,QV2M",
     community: "AG",
     latitude: "-25.5097",
     longitude: "-54.6111",
@@ -26,18 +23,17 @@ function NASAData() {
   const fullUrl = `${url}?${encodedQueryParams}`;
 
   useEffect(() => {
+    console.log("URL completa:", fullUrl);
     const fetchData = async () => {
-      console.log("URL completa:", fullUrl);
-
       try {
         const response = await fetch(fullUrl);
-        console.log(response);
         if (!response.ok) {
           console.error("Error details:", response);
-          throw new Error("Network response was not ok");
+          const message = `Error al obtener datos de la NASA: ${response.status} ${response.statusText}`;
+          throw new Error(message);
         }
         const jsonData = await response.json();
-        console.log(jsonData);
+        console.log("Datos de la NASA:", jsonData);
         setData(jsonData);
       } catch (error) {
         setError(error);
@@ -47,78 +43,83 @@ function NASAData() {
     fetchData();
   }, []);
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  useEffect(() => {
-    const generatePlantingRecommendations = async () => {
-      try {
-        const vertexAI = new VertexAI({ project: 'alpha-agro-space', location: 'us-central1' });
-        const generativeModel = vertexAI.getGenerativeModel({
-          model: 'gemini-1.5-flash-001',
-        });
+    try {
+      const filteredData = {
+        T2M: data.properties.parameter.T2M,
+        T2MDEW: data.properties.parameter.T2MDEW,
+        T2MWET: data.properties.parameter.T2MWET,
+        TS: data.properties.parameter.TS,
+        PRECTOTCORR: data.properties.parameter.PRECTOTCORR,
+        RH2M: data.properties.parameter.RH2M,
+        WS10M: data.properties.parameter.WS10M,
+        WD10M: data.properties.parameter.WD10M,
+        ALLSKY_SFC_SW_DWN: data.properties.parameter.ALLSKY_SFC_SW_DWN,
+        CLRSKY_SFC_SW_DWN: data.properties.parameter.CLRSKY_SFC_SW_DWN,
+        QV2M: data.properties.parameter.QV2M,
+      };
+      const response = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tipoDeCultivo: tipoDeCultivo,
+          nombreDelCultivo: nombreDelCultivo,
+          data: filteredData 
+        })
+      });
 
-        // Construir el prompt (incluyendo los datos meteorológicos si están disponibles)
-        let prompt = `Dado el tipo de plantación ${tipoDeCultivo}, calcula el promedio de las variables relevantes y realiza una predicción basada en las tendencias observadas. Proporciona recomendaciones específicas para optimizar el rendimiento de la plantación, en este caso ${nombreDelCultivo}.`;
-
-        if (data && data.properties && data.properties.parameter) {
-          const { properties } = data;
-          const { parameter } = properties;
-          const temperatureData = parameter.T2M;
-          const dewPointData = parameter.T2MDEW;
-          const wetBulbData = parameter.T2MWET;
-          const surfaceTempData = parameter.TS;
-          const precipitationData = parameter.PRECTOTCORR;
-          const relativeHumidityData = parameter.RH2M;
-          const windSpeedData = parameter.WS10M;
-          const windDirectionData = parameter.WD10M;
-          const solarRadiationAllSkyData = parameter.ALLSKY_SFC_SW_DWN;
-          const solarRadiationClearSkyData = parameter.CLRSKY_SFC_SW_DWN;
-          const specificHumidityData = parameter.QV2M;
-          const cloudCoverData = parameter.CLOUDTOT;
-          const snowAccumulationData = parameter.ASNOW;
-
-          prompt += `
-
-            Datos climáticos:
-            Temperatura: ${JSON.stringify(temperatureData)}
-            Dew Point: ${JSON.stringify(dewPointData)}
-            Wet Bulb Temperature: ${JSON.stringify(wetBulbData)}
-            Surface Temperature: ${JSON.stringify(surfaceTempData)}
-            Precipitation: ${JSON.stringify(precipitationData)}
-            Relative Humidity: ${JSON.stringify(relativeHumidityData)}
-            Wind Speed: ${JSON.stringify(windSpeedData)}
-            Wind Direction: ${JSON.stringify(windDirectionData)}
-            Solar Radiation (All Sky): ${JSON.stringify(solarRadiationAllSkyData)}
-            Solar Radiation (Clear Sky): ${JSON.stringify(solarRadiationClearSkyData)}
-            Specific Humidity: ${JSON.stringify(specificHumidityData)}
-            Cloud Cover: ${JSON.stringify(cloudCoverData)}
-            Snow Accumulation: ${JSON.stringify(snowAccumulationData)}
-          `;
-        }
-
-        const resp = await generativeModel.generateContent(prompt);
-        const contentResponse = await resp.response;
-        setPlantingRecommendations(contentResponse.text);
-      } catch (error) {
-        console.error("Error al generar recomendaciones:", error);
-        setError(error);
+      if (!response.ok) {
+        console.error("Error details:", response);
+        const message = `Error al obtener recomendaciones: ${response.status} ${response.statusText}`;
+        throw new Error(message);
       }
-    };
 
-    // Llamar a la función incondicionalmente
-    generatePlantingRecommendations();
-  }, [tipoDeCultivo, nombreDelCultivo, data]);
+      const jsonData = await response.json();
+      setPlantingRecommendations(jsonData.recommendations);
+    } catch (error) {
+      console.error("Error al obtener recomendaciones:", error);
+      setError(error);
+    }
+  };
 
-  // Muestra los datos
   return (
     <div>
-      <h1>Respuesta de Geminis: </h1>
-      {plantingRecommendations && <h2>Recomendaciones para la plantación:</h2>}
-      {plantingRecommendations && <p>{plantingRecommendations}</p>}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="tipoDeCultivo">Tipo de Cultivo:</label>
+          <input
+            type="text"
+            id="tipoDeCultivo"
+            value={tipoDeCultivo}
+            onChange={(e) => setTipoDeCultivo(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="nombreDelCultivo">Nombre del Cultivo:</label>
+          <input
+            type="text"
+            id="nombreDelCultivo"
+            value={nombreDelCultivo}
+            onChange={(e) => setNombreDelCultivo(e.target.value)}
+          />
+        </div>
+        <button type="submit">Obtener Recomendaciones</button>
+      </form>
 
-      {/* ... (opcionalmente mostrar los datos meteorológicos) ... */}
+      {error && <div>Error: {error.message}</div>}
+      {plantingRecommendations ? (
+        <div>
+          <h1>Respuesta de Geminis:</h1>
+          <h2>Recomendaciones para la plantación de {nombreDelCultivo}:</h2>
+          <p>{plantingRecommendations}</p>
+        </div>
+      ) : (
+        !error && <div>Cargando...</div>
+      )}
     </div>
   );
 }
