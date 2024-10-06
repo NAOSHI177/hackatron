@@ -1,8 +1,10 @@
-import Header from "./main/Header";
+import NASAData from "./tools/NASAData";
 
 const Tools = () => {
     return (
-        <Header></Header>
+        <>
+            <NASAData></NASAData>
+        </>
     );
 };
 

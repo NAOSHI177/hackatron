@@ -30,9 +30,7 @@ const Header = () => {
                             <p>
                             Take control of your fields with up-to-the-minute weather data. Make smarter decisions, maximize your yields, and stay ahead of any climate challenge with our intuitive platform built for agronomists like you.
                             </p>
-
                         </div>
-
                     </div>
                 </div>
             </header>
