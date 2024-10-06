@@ -2,28 +2,31 @@ import React, { useState, useEffect, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 function NASAData() {
-
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'AIzaSyDDs9_d0wrqaBVUThUKZDld6mtZlz8A1hE' // Reemplaza con tu clave de API
+    googleMapsApiKey: 'AIzaSyDDs9_d0wrqaBVUThUKZDld6mtZlz8A1hE' // Replace with your API key
   });
 
   const [map, setMap] = useState(null);
   const [markerPosition, setMarkerPosition] = useState({ lat: -25.5087, lng: -54.6483 });
-  const center = useRef({ lat: -25.5087, lng: -54.6483 }); 
-  const inputRef = useRef(null);
-  const [selectedPosition, setSelectedPosition] = useState({ lat: null, lng: null }); // Estado para posición seleccionada
+  const center = useRef({ lat: -25.5087, lng: -54.6483 });
+  const [selectedPosition, setSelectedPosition] = useState({ lat: null, lng: null }); // State for selected position
 
-  const onLoad = React.useCallback(function callback(map) {
-    setMap(map); 
+  const onLoad = React.useCallback((mapInstance) => {
+    setMap(mapInstance);
   }, []);
 
-  const onUnmount = React.useCallback(function callback() {
+  const onUnmount = React.useCallback(() => {
     setMap(null);
   }, []);
 
   const handleMapClick = (event) => {
-    setSelectedPosition({ lat: event.latLng.lat(), lng: event.latLng.lng() }); // Captura la geolocalización
+    const latLng = {
+      lat: event.latLng.lat(),
+      lng: event.latLng.lng()
+    };
+    setSelectedPosition(latLng); // Update the selected position
+    setMarkerPosition(latLng); // Update the marker position to the clicked location
   };
 
   useEffect(() => {
@@ -33,12 +36,10 @@ function NASAData() {
         map: map,
       });
 
-      map.addListener('click', handleMapClick); // Evento click en el mapa
-
+      // Cleanup function to remove the marker when the component unmounts
       return () => {
         newMarker.setMap(null);
       };
-
     }
   }, [map, markerPosition]);
 
@@ -50,7 +51,7 @@ function NASAData() {
 
   const url = "https://power.larc.nasa.gov/api/temporal/daily/point";
   const params = {
-    start: "20150912",
+    start: "20190912",
     parameters: "T2M,T2MDEW,T2MWET,TS,PS,RH2M,PRECTOTCORR,WS10M,WD10M,ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,QV2M",
     community: "AG",
     latitude: "-25.5097",
@@ -64,17 +65,17 @@ function NASAData() {
   const fullUrl = `${url}?${encodedQueryParams}`;
 
   useEffect(() => {
-    console.log("URL completa:", fullUrl);
+    console.log("Complete URL:", fullUrl);
     const fetchData = async () => {
       try {
         const response = await fetch(fullUrl);
         if (!response.ok) {
           console.error("Error details:", response);
-          const message = `Error al obtener datos de la NASA: ${response.status} ${response.statusText}`;
+          const message = `Error fetching NASA data: ${response.status} ${response.statusText}`;
           throw new Error(message);
         }
         const jsonData = await response.json();
-        console.log("Datos de la NASA:", jsonData);
+        console.log("NASA data:", jsonData);
         setData(jsonData);
       } catch (error) {
         setError(error);
@@ -88,7 +89,7 @@ function NASAData() {
     event.preventDefault();
 
     if (!data || !selectedPosition.lat || !selectedPosition.lng) {
-      setError(new Error("Los datos de la NASA o la geolocalización aún no están disponibles. Por favor, espere."));
+      setError(new Error("NASA data or geolocation is not yet available. Please wait."));
       return;
     }
 
@@ -107,7 +108,7 @@ function NASAData() {
         QV2M: data.properties.parameter.QV2M,
       };
 
-      const response = await fetch('http://localhost:3001/api/recommendations', { 
+      const response = await fetch('http://localhost:3001/api/recommendations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -116,21 +117,21 @@ function NASAData() {
           tipoDeCultivo: tipoDeCultivo,
           nombreDelCultivo: nombreDelCultivo,
           data: filteredData,
-          latitud: selectedPosition.lat,   // Enviamos la latitud seleccionada
-          longitud: selectedPosition.lng   // Enviamos la longitud seleccionada
+          latitud: selectedPosition.lat,   // Send the selected latitude
+          longitud: selectedPosition.lng   // Send the selected longitude
         })
       });
 
       if (!response.ok) {
-        const message = `Error al obtener recomendaciones: ${response.status} ${response.statusText}`; 
+        const message = `Error fetching recommendations: ${response.status} ${response.statusText}`;
         throw new Error(message);
       }
 
       const jsonData = await response.json();
       setPlantingRecommendations(jsonData.recommendations);
-      setError(null); 
+      setError(null);
     } catch (error) {
-      console.error("Error al obtener recomendaciones:", error);
+      console.error("Error fetching recommendations:", error);
       setError(error);
     }
   };
@@ -139,7 +140,7 @@ function NASAData() {
     <>
       <div className="ctn-tool-main">
         <div className="login-box">
-          <h2>Login</h2>
+          <h2>Insert Data</h2>
           {data ? (
             <form onSubmit={handleSubmit}>
               <div className="user-box">
@@ -149,7 +150,7 @@ function NASAData() {
                   value={tipoDeCultivo}
                   onChange={(e) => setTipoDeCultivo(e.target.value)}
                 />
-                <label htmlFor="tipoDeCultivo">Tipo de Cultivo: </label>
+                <label htmlFor="tipoDeCultivo">Crop Type: </label>
               </div>
               <div className="user-box">
                 <input
@@ -158,10 +159,10 @@ function NASAData() {
                   value={nombreDelCultivo}
                   onChange={(e) => setNombreDelCultivo(e.target.value)}
                 />
-                <label htmlFor="nombreDelCultivo">Nombre del Cultivo:</label>
+                <label htmlFor="nombreDelCultivo">Crop Name:</label>
               </div>
               <div className="user-box">
-                <button type="submit" className="button-29">Send</button> 
+                <button type="submit" className="button-29">Send</button>
                 <div>
                   <GoogleMap
                     mapContainerStyle={{ height: '200px', width: '100%', borderRadius: '10px' }}
@@ -169,7 +170,7 @@ function NASAData() {
                     zoom={12}
                     onLoad={onLoad}
                     onUnmount={onUnmount}
-                    onClick={handleMapClick} 
+                    onClick={handleMapClick}
                   >
                     <Marker position={markerPosition} />
                     {selectedPosition && (
@@ -177,39 +178,40 @@ function NASAData() {
                     )}
                   </GoogleMap>
                   {selectedPosition && (
-                    <div>
-                      Latitud: {selectedPosition.lat}
+                    <div className="Lati-logti">
+                      Latitude: {selectedPosition.lat}
                       <br />
-                      Longitud: {selectedPosition.lng}
+                      Longitude: {selectedPosition.lng}
                     </div>
                   )}
                 </div>
               </div>
             </form>
           ) : (
-            <div>Cargando datos de la NASA...</div>
+            <div>Loading NASA data...</div>
           )}
         </div>
         <div className="chat">
-            <div className="chat-title">
-              <h1>Gemini 1.5 pro</h1>
-              <h2>@gemini</h2>
-                <figure className="avatar">
-                  <img src="https://play-lh.googleusercontent.com/Pkwn0AbykyjSuCdSYCbq0dvOqHP-YXcbBLTZ8AOUZhvnRuhUnZ2aJrw_YCf6kVMcZ4PM=w240-h480-rw" /></figure>
-            </div>
-            <div className="messages">
-              <div className="messages-content"><div>
-          {error && <div>Error: {error.message}</div>}
-          {plantingRecommendations && (
-            <div className="div-respuesta">
-              <h2>Recomendaciones para la plantación de {nombreDelCultivo}:</h2>
-              <p>{plantingRecommendations}</p>
-            </div>
-          )}
-        </div></div>
-            </div>
+          <div className="chat-title">
+            <h1>Gemini 1.5 pro</h1>
+            <h2>@gemini</h2>
+            <figure className="avatar">
+              <img src="https://play-lh.googleusercontent.com/Pkwn0AbykyjSuCdSYCbq0dvOqHP-YXcbBLTZ8AOUZhvnRuhUnZ2aJrw_YCf6kVMcZ4PM=w240-h480-rw" />
+            </figure>
+          </div>
+          <div className="messages">
+            <div className="messages-content"><div>
+              {error && <div>Error: {error.message}</div>}
+              {plantingRecommendations && (
+                <div className="div-respuesta">
+                  <h2>Recommendations for the planting of {nombreDelCultivo}:</h2>
+                  <p>{plantingRecommendations}</p>
+                </div>
+              )}
+            </div></div>
           </div>
         </div>
+      </div>
     </>
   ) : <></>;
 }
