@@ -52,10 +52,11 @@ app.post('/api/recommendations', async (req, res) => {
         Specific Humidity: ${JSON.stringify(specificHumidityData)}
       `;
     }
-
+    
 
     const resp = await generativeModel.generateContent(prompt);
     const contentResponse = await resp.response;
+    console.log("Recomendaciones generadas:", contentResponse.text);
 
     res.json({ recommendations: contentResponse.text });
   } catch (error) {

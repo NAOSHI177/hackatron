@@ -171,6 +171,7 @@ function NASAData() {
                   <label htmlFor="nombreDelCultivo">Nombre del Cultivo:</label>
                 </div>
                 <div className="user-box">
+                  <button type="submit" className="button-29">Send</button> 
                 <div>
       <GoogleMap
         mapContainerStyle={{ height: '200px', width: '100%', borderRadius: '10px' }}
