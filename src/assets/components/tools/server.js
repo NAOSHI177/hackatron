@@ -1,12 +1,15 @@
 import express from 'express';
+import cors from 'cors'; 
 import { VertexAI } from '@google-cloud/vertexai';
 
 const app = express();
 const port = 3001;
 
+app.use(cors()); 
 app.use(express.json());
 
 app.post('/api/recommendations', async (req, res) => {
+  console.log("Request received at /api/recommendations"); 
   try {
     const { tipoDeCultivo, nombreDelCultivo, data } = req.body;
 
@@ -32,8 +35,6 @@ app.post('/api/recommendations', async (req, res) => {
       const solarRadiationAllSkyData = parameter.ALLSKY_SFC_SW_DWN;
       const solarRadiationClearSkyData = parameter.CLRSKY_SFC_SW_DWN;
       const specificHumidityData = parameter.QV2M;
-      const cloudCoverData = parameter.CLOUDTOT;
-      const snowAccumulationData = parameter.ASNOW;
 
       prompt += `
   
@@ -49,10 +50,9 @@ app.post('/api/recommendations', async (req, res) => {
         Solar Radiation (All Sky): ${JSON.stringify(solarRadiationAllSkyData)}
         Solar Radiation (Clear Sky): ${JSON.stringify(solarRadiationClearSkyData)}
         Specific Humidity: ${JSON.stringify(specificHumidityData)}
-        Cloud Cover: ${JSON.stringify(cloudCoverData)}
-        Snow Accumulation: ${JSON.stringify(snowAccumulationData)}
       `;
     }
+
 
     const resp = await generativeModel.generateContent(prompt);
     const contentResponse = await resp.response;
