@@ -9,7 +9,7 @@
   }
   
   .ctnheader-global{
-    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),url(../src/assets/components/main/img/starry-sky-night-with-landscape-mountains.jpg);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),url(./starry-sky-night-with-landscape-mountains.jpg);
     background-size: cover;
     background-repeat: no-repeat;
     width: 100%;

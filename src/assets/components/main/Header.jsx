@@ -11,7 +11,7 @@ const Header = () => {
                     <div className="ctnnavspace">
                         <div className="ctnnav">
                             <nav className="navctn">
-                                <h1 className="logo"><span>Agro</span> Space</h1>
+                                <h1 className="logo">Alpha<span>Agro</span> Space</h1>
                                 <ul className="ctnul">
                                     <li><Link to='/' className="linkul">Home   </Link></li>
                                     <li><Link to='/tools' className="linkul">Tools</Link></li>

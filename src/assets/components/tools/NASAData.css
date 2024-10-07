@@ -1,3 +1,16 @@
+
+input[type="text"] {
+    all: unset; /* Resetea todos los estilos */
+    background-color: transparent; /* Fondo transparente */
+    border: none; /* Sin bordes */
+    outline: none; /* Sin outline al enfocarse */
+    font: inherit; /* Usa el estilo de fuente del contenedor */
+    color: inherit; /* Usa el color de texto del contenedor */
+    padding: 0; /* Quita el padding */
+    margin: 0; /* Quita el margin */
+    box-sizing: border-box; /* Asegura que el tamaño incluye padding y bordes */
+  }
+
 .chat {
     @include center;
     width: 600px;
@@ -292,16 +305,24 @@
   
 
   .ctn-tool-main{
-    background: -moz-linear-gradient(-45deg, #183850 0, #183850 25%, #192C46 50%, #22254C 75%, #22254C 100%);
+    /* background: -moz-linear-gradient(-45deg, #183850 0, #183850 25%, #192C46 50%, #22254C 75%, #22254C 100%);
 	background: -webkit-linear-gradient(-45deg, #183850 0, #183850 25%, #192C46 50%, #22254C 75%, #22254C 100%);
 	background-repeat: no-repeat;
   background-attachment: fixed;
+    background-size: cover; */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),url(../src/assets/components/main/img/starry-sky-night-with-landscape-mountains.jpg);
     background-size: cover;
+    background-repeat: no-repeat;
+    width: 100%;
+    position: relative;
     width: 100%;
     height: 720px;
     display: flex;
     justify-content: space-around;
     align-items: center;
+    -webkit-box-shadow: 0px 0px 288px 5px rgba(0,0,0,0.75);
+-moz-box-shadow: 0px 0px 288px 5px rgba(0,0,0,0.75);
+box-shadow: 0px 0px 288px 5px rgba(0,0,0,0.75);
   }
 
   .login-box {

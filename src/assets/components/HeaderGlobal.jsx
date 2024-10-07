@@ -8,7 +8,7 @@ const HeaderGlobal = () => {
                     <div className="ctnnavspace-global">
                         <div className="ctnnav-global">
                             <nav className="navctn-global">
-                                <h1 className="logo-global"><span>Agro</span> Space</h1>
+                                <h1 className="logo-global">Alpha<span>Agro</span> Space</h1>
                                 <ul className="ctnul-global">
                                     <li><Link to='/' className="linkul-global">Home</Link></li>
                                     <li><Link to='/tools' className="linkul-global">Tools</Link></li>

@@ -64,6 +64,7 @@ function NASAData() {
   const encodedQueryParams = queryParams.toString();
   const fullUrl = `${url}?${encodedQueryParams}`;
 
+
   useEffect(() => {
     console.log("Complete URL:", fullUrl);
     const fetchData = async () => {
@@ -107,6 +108,8 @@ function NASAData() {
         CLRSKY_SFC_SW_DWN: data.properties.parameter.CLRSKY_SFC_SW_DWN,
         QV2M: data.properties.parameter.QV2M,
       };
+
+      console.log("Filtered data:", filteredData);
 
       const response = await fetch('http://localhost:3001/api/recommendations', {
         method: 'POST',
